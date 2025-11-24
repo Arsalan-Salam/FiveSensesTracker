@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "731993906232",
+    "project_id": "fivesensestracker",
+    "storage_bucket": "fivesensestracker.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:731993906232:android:cb14118aff7a47f1105acd",
+        "android_client_info": {
+          "package_name": "week11.st273238.fivesensestracker.navigation"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCStC-QR5oX8v8pUde-wQ7WsYAglGFDKDQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
