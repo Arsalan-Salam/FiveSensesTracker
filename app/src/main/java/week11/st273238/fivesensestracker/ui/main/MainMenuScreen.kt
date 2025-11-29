@@ -12,7 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import week11.st273238.fivesensestracker.data.model.SensorType
-import week11.st273238.fivesensestracker.viewmodel.SensorUiState
+import week11.st273238.fivesensestracker.viewModel.SensorUiState
 
 @Composable
 fun MainMenuScreen(

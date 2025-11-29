@@ -1,4 +1,4 @@
-package week11.st273238.fivesensestracker.viewmodel
+package week11.st273238.fivesensestracker.viewModel
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
