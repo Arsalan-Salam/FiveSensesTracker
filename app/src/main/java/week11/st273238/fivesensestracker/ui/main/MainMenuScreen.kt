@@ -11,8 +11,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Color
 import week11.st273238.fivesensestracker.data.model.SensorType
-import week11.st273238.fivesensestracker.viewModel.SensorUiState
+import week11.st273238.fivesensestracker.util.SensorUiState
 
 @Composable
 fun MainMenuScreen(
@@ -28,9 +29,17 @@ fun MainMenuScreen(
                 .padding(horizontal = 24.dp, vertical = 32.dp)
         ) {
             Text("Main Menu", fontSize = 26.sp, fontWeight = FontWeight.Bold)
-            Text("5 Senses Tracker", fontSize = 16.sp, modifier = Modifier.padding(bottom = 24.dp))
+            Text(
+                "5 Senses Tracker",
+                fontSize = 16.sp,
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
 
-            Text("Select a Sensor", fontSize = 18.sp, modifier = Modifier.padding(bottom = 16.dp))
+            Text(
+                "Select a Sensor",
+                fontSize = 18.sp,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
 
             Column(modifier = Modifier.weight(1f)) {
                 Row(
@@ -67,7 +76,10 @@ fun MainMenuScreen(
                         type = SensorType.LOCATION,
                         primaryText = sensorState.latestReadings[SensorType.LOCATION]
                             ?.values?.let { vals ->
-                                if (vals.size >= 2) "Lat: ${vals[0]}, Lng: ${vals[1]}" else "Lat / Lng"
+                                if (vals.size >= 2)
+                                    "Lat: ${vals[0]}, Lng: ${vals[1]}"
+                                else
+                                    "Lat / Lng"
                             } ?: "Lat / Lng",
                         unit = "",
                         modifier = Modifier.weight(1f),
@@ -105,18 +117,15 @@ fun MainMenuScreen(
                     )
                 }
             }
-        }
 
-        Button(
-            onClick = onSignOut,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.error
-            ),
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(24.dp)
-        ) {
-            Text("Sign Out")
+            Spacer(Modifier.height(24.dp))
+
+            Button(
+                onClick = onSignOut,
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Text("Sign Out")
+            }
         }
     }
 }
@@ -127,7 +136,7 @@ private fun SensorTile(
     primaryText: String,
     unit: String,
     modifier: Modifier = Modifier,
-    color: androidx.compose.ui.graphics.Color,
+    color: Color,
     onClick: (SensorType) -> Unit
 ) {
     Surface(

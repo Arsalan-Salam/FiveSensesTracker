@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:731993906232:android:cb14118aff7a47f1105acd",
+        "mobilesdk_app_id": "1:731993906232:android:ce69ce8cb975b2d7105acd",
         "android_client_info": {
-          "package_name": "week11.st273238.fivesensestracker.navigation"
+          "package_name": "week11.st273238.fivesensestracker"
         }
       },
       "oauth_client": [],

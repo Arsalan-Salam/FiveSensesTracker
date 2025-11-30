@@ -10,16 +10,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import week11.st273238.fivesensestracker.data.model.SensorType
-import week11.st273238.fivesensestracker.viewModel.SensorUiState
+import week11.st273238.fivesensestracker.util.SensorUiState
 
 @Composable
-fun SensorDetailScreen(
+fun SensorDetailsScreen(
     sensorType: SensorType,
     state: SensorUiState,
     onBack: () -> Unit,
     onSaveReading: () -> Unit
 ) {
-    val reading = state.latestReadings[sensorType]
+    val reading = state.currentReading
 
     Column(
         modifier = Modifier
@@ -29,9 +29,10 @@ fun SensorDetailScreen(
         Text("Sensor Detail", fontSize = 26.sp, fontWeight = FontWeight.Bold)
         Text("5 Senses Tracker", fontSize = 16.sp, modifier = Modifier.padding(bottom = 24.dp))
 
-        Text("Sensor Detail", fontWeight = FontWeight.SemiBold)
+        Text("Sensor: ${sensorType.name}", fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(8.dp))
 
+        // SENSOR VALUES
         Surface(
             shape = MaterialTheme.shapes.medium,
             tonalElevation = 2.dp,
@@ -51,6 +52,7 @@ fun SensorDetailScreen(
 
         Spacer(Modifier.height(16.dp))
 
+        // GRAPH PLACEHOLDER
         Surface(
             shape = MaterialTheme.shapes.medium,
             tonalElevation = 1.dp,

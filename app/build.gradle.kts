@@ -3,17 +3,20 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 
-    // Google services plugin (Firebase)
+    // REQUIRED for Compose with Kotlin 2.x
+    id("org.jetbrains.kotlin.plugin.compose")
+
+    // Firebase
     id("com.google.gms.google-services")
 }
 
 android {
     namespace = "week11.st273238.fivesensestracker"
-    compileSdk = 35  // fine for AGP 8.x+
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "week11.st273238.fivesensestracker"
-        minSdk = 23          // Firebase’s newer libs generally assume 23+
+        minSdk = 26
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -22,7 +25,7 @@ android {
     }
 
     buildTypes {
-        getByName("release") {
+        release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -35,6 +38,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
     kotlinOptions {
         jvmTarget = "17"
     }
@@ -43,10 +47,8 @@ android {
         compose = true
     }
 
-    composeOptions {
-        // Use the compiler extension that matches your Compose BOM
-        kotlinCompilerExtensionVersion = "1.5.15"
-    }
+    // ❗ REMOVE composeOptions block (Kotlin 2.x no longer uses it)
+    // composeOptions { kotlinCompilerExtensionVersion = "…" } ← DELETED
 
     packaging {
         resources {
@@ -57,7 +59,7 @@ android {
 
 dependencies {
     // -----------------------------
-    // Jetpack Compose + Material 3
+    // Jetpack Compose BOM
     // -----------------------------
     val composeBom = platform("androidx.compose:compose-bom:2024.09.01")
     implementation(composeBom)
@@ -82,12 +84,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 
     // -----------------------------
-    // Firebase (Auth + Firestore)
+    // Firebase Auth + Firestore
     // -----------------------------
-    // BoM (version may change; this matches your console example around 34.x) :contentReference[oaicite:3]{index=3}
     implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
-
-    // When using BoM you DO NOT specify versions here
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
 
@@ -96,9 +95,7 @@ dependencies {
     // -----------------------------
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
-    // -----------------------------
-    // AndroidX core + testing
-    // -----------------------------
+    // Core + Testing
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
 
