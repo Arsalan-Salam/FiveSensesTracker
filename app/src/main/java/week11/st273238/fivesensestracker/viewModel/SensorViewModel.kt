@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import week11.st273238.fivesensestracker.data.model.SensorReading
+import week11.st273238.fivesensestracker.data.model.SensorType
 import week11.st273238.fivesensestracker.data.repository.SensorRepository
 import week11.st273238.fivesensestracker.util.SensorUiState
 
@@ -21,6 +22,26 @@ class SensorViewModel(application: Application) : AndroidViewModel(application) 
     private val _uiState = MutableStateFlow(SensorUiState())
     val uiState: StateFlow<SensorUiState> = _uiState
 
+    init {
+        // Start collecting sensor and location updates as soon as ViewModel is created
+        startSensorStreams()
+    }
+
+    private fun startSensorStreams() {
+        // 1) Continuous hardware sensors: pressure, light, accel, proximity
+        viewModelScope.launch {
+            repository.observeSensors().collect { reading ->
+                updateCurrentReading(reading)
+            }
+        }
+
+        // 2) One-shot last known GPS location (your repo exposes this)
+        viewModelScope.launch {
+            repository.getLastLocation().collect { reading ->
+                updateCurrentReading(reading)
+            }
+        }
+    }
     // -----------------------
     // REFRESH GPS LOCATION
     // -----------------------
@@ -56,9 +77,12 @@ class SensorViewModel(application: Application) : AndroidViewModel(application) 
         val currentMap = _uiState.value.latestReadings.toMutableMap()
         currentMap[reading.sensorType] = reading
 
+        val newHistory = (_uiState.value.history + reading).takeLast(50)
+
         _uiState.value = _uiState.value.copy(
             currentReading = reading,
             latestReadings = currentMap,
+            history = newHistory,
             error = null
         )
     }
@@ -82,5 +106,13 @@ class SensorViewModel(application: Application) : AndroidViewModel(application) 
             val history = repository.loadReadings()
             _uiState.value = _uiState.value.copy(history = history)
         }
+    }
+
+    fun selectSensor(type: SensorType) {
+        _uiState.value = _uiState.value.copy(selectedSensor = type)
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
     }
 }

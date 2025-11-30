@@ -1,5 +1,6 @@
 package week11.st273238.fivesensestracker.ui.sensor
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -11,6 +12,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import week11.st273238.fivesensestracker.data.model.SensorType
 import week11.st273238.fivesensestracker.util.SensorUiState
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+
 
 @Composable
 fun SensorDetailsScreen(
@@ -60,12 +65,10 @@ fun SensorDetailsScreen(
                 .fillMaxWidth()
                 .height(180.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
+            LiveSensorGraph(
+                values = reading?.values ?: emptyList(),
+                modifier = Modifier.fillMaxSize()
+            )
                 Text("Live graph placeholder")
             }
         }
@@ -86,5 +89,53 @@ fun SensorDetailsScreen(
         TextButton(onClick = onBack) {
             Text("← Back to Main Menu")
         }
+    }
+
+@Composable
+fun LiveSensorGraph(
+    values: List<Float>,
+    modifier: Modifier = Modifier
+) {
+    val graphColor = MaterialTheme.colorScheme.primary
+
+    if (values.isEmpty()) {
+        Box(
+            modifier = modifier
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("Waiting for sensor data…")
+        }
+        return
+    }
+
+    Canvas(
+        modifier = modifier
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        val maxVal = values.maxOrNull() ?: 0f
+        val minVal = values.minOrNull() ?: 0f
+        val range = if (maxVal == minVal) 1f else (maxVal - minVal)
+
+        val stepX = if (values.size <= 1) 0f else size.width / (values.size - 1)
+        val path = Path()
+
+        values.forEachIndexed { index, v ->
+            val normalized = (v - minVal) / range
+            val x = stepX * index
+            val y = size.height - (normalized * size.height)
+
+            if (index == 0) {
+                path.moveTo(x, y)
+            } else {
+                path.lineTo(x, y)
+            }
+        }
+
+        drawPath(
+            path = path,
+            color = graphColor,
+            style = Stroke(width = 4f, cap = StrokeCap.Round)
+        )
     }
 }
