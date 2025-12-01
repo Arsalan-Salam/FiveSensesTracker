@@ -1,118 +1,78 @@
 package week11.st273238.fivesensestracker.viewModel
 
-import android.annotation.SuppressLint
-import android.app.Application
-import android.content.Context
-import android.location.LocationManager
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import week11.st273238.fivesensestracker.data.model.SensorReading
 import week11.st273238.fivesensestracker.data.model.SensorType
 import week11.st273238.fivesensestracker.data.repository.SensorRepository
-import week11.st273238.fivesensestracker.util.SensorUiState
+import week11.st273238.fivesensestracker.util.UiState
 
-class SensorViewModel(application: Application) : AndroidViewModel(application) {
+class SensorViewModel(private val repo: SensorRepository) : ViewModel() {
 
-    private val appContext: Context = application.applicationContext
-    private val repository = SensorRepository(appContext)
+    private val _light = MutableStateFlow<SensorReading?>(null)
+    val light: StateFlow<SensorReading?> = _light
 
-    private val _uiState = MutableStateFlow(SensorUiState())
-    val uiState: StateFlow<SensorUiState> = _uiState
+    private val _pressure = MutableStateFlow<SensorReading?>(null)
+    val pressure: StateFlow<SensorReading?> = _pressure
+
+    private val _accel = MutableStateFlow<SensorReading?>(null)
+    val accel: StateFlow<SensorReading?> = _accel
+
+    private val _prox = MutableStateFlow<SensorReading?>(null)
+    val prox: StateFlow<SensorReading?> = _prox
+
+    private val _location = MutableStateFlow<SensorReading?>(null)
+    val location: StateFlow<SensorReading?> = _location
+
+    private val _saveState = MutableStateFlow<UiState>(UiState.Empty)
+    val saveState: StateFlow<UiState> = _saveState
 
     init {
-        // Start collecting sensor and location updates as soon as ViewModel is created
-        startSensorStreams()
-    }
-
-    private fun startSensorStreams() {
-        // 1) Continuous hardware sensors: pressure, light, accel, proximity
         viewModelScope.launch {
-            repository.observeSensors().collect { reading ->
-                updateCurrentReading(reading)
-            }
-        }
-
-        // 2) One-shot last known GPS location (your repo exposes this)
-        viewModelScope.launch {
-            repository.getLastLocation().collect { reading ->
-                updateCurrentReading(reading)
+            repo.observeAllSensors().collectLatest { reading ->
+                when (reading.sensorType) {
+                    SensorType.LIGHT -> _light.value = reading
+                    SensorType.PRESSURE -> _pressure.value = reading
+                    SensorType.ACCELERATION -> _accel.value = reading
+                    SensorType.PROXIMITY -> _prox.value = reading
+                    else -> Unit
+                }
             }
         }
     }
-    // -----------------------
-    // REFRESH GPS LOCATION
-    // -----------------------
-    @SuppressLint("MissingPermission")
+
     fun refreshLocation() {
-        try {
-            val lm = appContext.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-            val loc = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-
-            if (loc != null) {
-                _uiState.value = _uiState.value.copy(
-                    gpsLatitude = loc.latitude,
-                    gpsLongitude = loc.longitude,
-                    error = null
-                )
-            } else {
-                _uiState.value = _uiState.value.copy(
-                    error = "Unable to retrieve location"
-                )
+        viewModelScope.launch {
+            repo.getLocationReading().collectLatest {
+                _location.value = it
             }
-        } catch (e: Exception) {
-            _uiState.value = _uiState.value.copy(
-                error = e.localizedMessage
-            )
         }
     }
 
-    // -----------------------
-    // UPDATE CURRENT READING
-    // (call this when you get a new sensor reading)
-    // -----------------------
-    fun updateCurrentReading(reading: SensorReading) {
-        val currentMap = _uiState.value.latestReadings.toMutableMap()
-        currentMap[reading.sensorType] = reading
+    fun save(type: SensorType) {
+        val reading = when (type) {
+            SensorType.LIGHT -> light.value
+            SensorType.PRESSURE -> pressure.value
+            SensorType.ACCELERATION -> accel.value
+            SensorType.PROXIMITY -> prox.value
+            SensorType.LOCATION -> location.value
+        }
 
-        val newHistory = (_uiState.value.history + reading).takeLast(50)
+        if (reading == null) {
+            _saveState.value = UiState.Failure("No reading for $type")
+            return
+        }
 
-        _uiState.value = _uiState.value.copy(
-            currentReading = reading,
-            latestReadings = currentMap,
-            history = newHistory,
-            error = null
-        )
-    }
-
-    // -----------------------
-    // SAVE CURRENT READING
-    // -----------------------
-    fun saveCurrentReadingToCloud() {
-        val reading = _uiState.value.currentReading ?: return
+        _saveState.value = UiState.Loading
 
         viewModelScope.launch {
-            repository.saveReading(reading)
+            val ok = repo.saveReading(reading)
+            _saveState.value =
+                if (ok) UiState.Success else UiState.Failure("Save failed")
         }
-    }
-
-    // -----------------------
-    // LOAD READINGS FROM CLOUD
-    // -----------------------
-    fun loadHistory() {
-        viewModelScope.launch {
-            val history = repository.loadReadings()
-            _uiState.value = _uiState.value.copy(history = history)
-        }
-    }
-
-    fun selectSensor(type: SensorType) {
-        _uiState.value = _uiState.value.copy(selectedSensor = type)
-    }
-
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
     }
 }
