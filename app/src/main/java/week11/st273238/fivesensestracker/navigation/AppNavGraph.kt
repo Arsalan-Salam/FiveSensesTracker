@@ -1,9 +1,6 @@
 package week11.st273238.fivesensestracker.navigation
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -32,12 +29,12 @@ object Routes {
 fun AppNavGraph(
     modifier: Modifier = Modifier,
     authViewModel: AuthViewModel = viewModel(),
-    sensorViewModel: SensorViewModel = viewModel()
+    sensorViewModel: SensorViewModel = viewModel()   // ✅ no factory needed now
 ) {
     val navController = rememberNavController()
 
     val authState by authViewModel.uiState.collectAsState()
-    val sensorState by sensorViewModel.uiState.collectAsState()
+    val sensorState by sensorViewModel.sensorState.collectAsState()
 
     NavHost(
         navController = navController,
@@ -47,10 +44,8 @@ fun AppNavGraph(
 
         // LOGIN
         composable(Routes.LOGIN) {
-            val state = authState
-
-            LaunchedEffect(state.isLoggedIn) {
-                if (state.isLoggedIn) {
+            LaunchedEffect(authState.isLoggedIn) {
+                if (authState.isLoggedIn) {
                     navController.navigate(Routes.MAIN_MENU) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
                     }
@@ -58,7 +53,7 @@ fun AppNavGraph(
             }
 
             LoginScreen(
-                state = state,
+                state = authState,
                 onEmailChange = authViewModel::onEmailChange,
                 onPasswordChange = authViewModel::onPasswordChange,
                 onLoginClick = { authViewModel.login() },
@@ -69,10 +64,8 @@ fun AppNavGraph(
 
         // SIGN UP
         composable(Routes.SIGN_UP) {
-            val state = authState
-
-            LaunchedEffect(state.isLoggedIn) {
-                if (state.isLoggedIn) {
+            LaunchedEffect(authState.isLoggedIn) {
+                if (authState.isLoggedIn) {
                     navController.navigate(Routes.MAIN_MENU) {
                         popUpTo(Routes.SIGN_UP) { inclusive = true }
                     }
@@ -80,7 +73,7 @@ fun AppNavGraph(
             }
 
             SignUpScreen(
-                state = state,
+                state = authState,
                 onEmailChange = authViewModel::onEmailChange,
                 onPasswordChange = authViewModel::onPasswordChange,
                 onConfirmPasswordChange = authViewModel::onConfirmPasswordChange,
@@ -91,10 +84,8 @@ fun AppNavGraph(
 
         // FORGOT PASSWORD
         composable(Routes.FORGOT) {
-            val state = authState
-
             ForgotPasswordScreen(
-                state = state,
+                state = authState,
                 onEmailChange = authViewModel::onEmailChange,
                 onResetClick = { authViewModel.resetPassword() },
                 onBackToLogin = { navController.popBackStack() }
@@ -106,6 +97,7 @@ fun AppNavGraph(
             MainMenuScreen(
                 sensorState = sensorState,
                 onSensorClick = { type ->
+                    sensorViewModel.selectSensor(type)
                     navController.navigate("${Routes.SENSOR_DETAIL}/${type.name}")
                 },
                 onSignOut = {
@@ -125,15 +117,14 @@ fun AppNavGraph(
                 navArgument("sensorType") { type = NavType.StringType }
             )
         ) { entry ->
-            val sensorTypeName =
-                entry.arguments?.getString("sensorType") ?: SensorType.PRESSURE.name
+            val sensorTypeName = entry.arguments?.getString("sensorType")!!
             val sensorType = SensorType.valueOf(sensorTypeName)
 
             SensorDetailsScreen(
                 sensorType = sensorType,
                 state = sensorState,
                 onBack = { navController.popBackStack() },
-                onSaveReading = { sensorViewModel.saveCurrentReadingToCloud() }
+                onSaveReading = { sensorViewModel.saveCurrent() }
             )
         }
     }

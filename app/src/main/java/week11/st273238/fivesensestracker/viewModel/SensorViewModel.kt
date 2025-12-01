@@ -1,32 +1,24 @@
 package week11.st273238.fivesensestracker.viewModel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import week11.st273238.fivesensestracker.data.model.SensorReading
 import week11.st273238.fivesensestracker.data.model.SensorType
 import week11.st273238.fivesensestracker.data.repository.SensorRepository
+import week11.st273238.fivesensestracker.util.SensorUiState
 import week11.st273238.fivesensestracker.util.UiState
 
-class SensorViewModel(private val repo: SensorRepository) : ViewModel() {
+class SensorViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val _light = MutableStateFlow<SensorReading?>(null)
-    val light: StateFlow<SensorReading?> = _light
+    private val repo = SensorRepository(application.applicationContext)
 
-    private val _pressure = MutableStateFlow<SensorReading?>(null)
-    val pressure: StateFlow<SensorReading?> = _pressure
-
-    private val _accel = MutableStateFlow<SensorReading?>(null)
-    val accel: StateFlow<SensorReading?> = _accel
-
-    private val _prox = MutableStateFlow<SensorReading?>(null)
-    val prox: StateFlow<SensorReading?> = _prox
-
-    private val _location = MutableStateFlow<SensorReading?>(null)
-    val location: StateFlow<SensorReading?> = _location
+    // Single state object for all sensors + current detail
+    private val _sensorState = MutableStateFlow(SensorUiState())
+    val sensorState: StateFlow<SensorUiState> = _sensorState
 
     private val _saveState = MutableStateFlow<UiState>(UiState.Empty)
     val saveState: StateFlow<UiState> = _saveState
@@ -34,36 +26,50 @@ class SensorViewModel(private val repo: SensorRepository) : ViewModel() {
     init {
         viewModelScope.launch {
             repo.observeAllSensors().collectLatest { reading ->
-                when (reading.sensorType) {
-                    SensorType.LIGHT -> _light.value = reading
-                    SensorType.PRESSURE -> _pressure.value = reading
-                    SensorType.ACCELERATION -> _accel.value = reading
-                    SensorType.PROXIMITY -> _prox.value = reading
-                    else -> Unit
-                }
+                val current = _sensorState.value
+                val latest = current.latestReadings.toMutableMap()
+                latest[reading.sensorType] = reading
+
+                _sensorState.value = current.copy(
+                    latestReadings = latest,
+                    currentReading = if (current.currentReading?.sensorType == reading.sensorType)
+                        reading
+                    else
+                        current.currentReading
+                )
             }
         }
     }
 
     fun refreshLocation() {
         viewModelScope.launch {
-            repo.getLocationReading().collectLatest {
-                _location.value = it
+            repo.getLocationReading().collectLatest { reading ->
+                val current = _sensorState.value
+                val latest = current.latestReadings.toMutableMap()
+                latest[SensorType.LOCATION] = reading
+
+                _sensorState.value = current.copy(
+                    latestReadings = latest,
+                    currentReading = if (current.currentReading?.sensorType == SensorType.LOCATION)
+                        reading
+                    else
+                        current.currentReading
+                )
             }
         }
     }
 
-    fun save(type: SensorType) {
-        val reading = when (type) {
-            SensorType.LIGHT -> light.value
-            SensorType.PRESSURE -> pressure.value
-            SensorType.ACCELERATION -> accel.value
-            SensorType.PROXIMITY -> prox.value
-            SensorType.LOCATION -> location.value
-        }
+    fun selectSensor(type: SensorType) {
+        val latest = _sensorState.value.latestReadings
+        _sensorState.value = _sensorState.value.copy(
+            currentReading = latest[type]
+        )
+    }
 
+    fun saveCurrent() {
+        val reading = _sensorState.value.currentReading
         if (reading == null) {
-            _saveState.value = UiState.Failure("No reading for $type")
+            _saveState.value = UiState.Failure("No reading to save")
             return
         }
 
