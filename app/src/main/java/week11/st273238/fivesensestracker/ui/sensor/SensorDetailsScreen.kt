@@ -2,11 +2,14 @@ package week11.st273238.fivesensestracker.ui.sensor
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,70 +29,115 @@ fun SensorDetailsScreen(
 ) {
     val reading = state.currentReading
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp, vertical = 32.dp)
+            .background(Color(0xFF181818))
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Text("Sensor Detail", fontSize = 26.sp, fontWeight = FontWeight.Bold)
-        Text("5 Senses Tracker", fontSize = 16.sp, modifier = Modifier.padding(bottom = 24.dp))
 
-        Text("Sensor: ${sensorType.name}", fontWeight = FontWeight.SemiBold)
-        Spacer(Modifier.height(8.dp))
-
-        // SENSOR VALUES
-        Surface(
-            shape = MaterialTheme.shapes.medium,
-            tonalElevation = 2.dp,
+        Card(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(120.dp)
+                .fillMaxWidth(0.9f)
+                .wrapContentHeight(),
+            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.elevatedCardElevation(6.dp)
         ) {
+
             Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.SpaceEvenly
+                modifier = Modifier
+                    .padding(horizontal = 24.dp, vertical = 28.dp),
+                horizontalAlignment = Alignment.Start
             ) {
-                Text("Value 1: ${reading?.values?.getOrNull(0) ?: "0.00"}")
-                Text("Value 2: ${reading?.values?.getOrNull(1) ?: "0.00"}")
-                Text("Value 3: ${reading?.values?.getOrNull(2) ?: "0.00"}")
+
+                // Title
+                Text(
+                    text = "Sensor Detail",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "5 Senses Tracker",
+                    fontSize = 13.sp,
+                    color = Color.Gray
+                )
+
+                Spacer(Modifier.height(20.dp))
+
+                Text(
+                    text = "Sensor: ${sensorType.name}",
+                    fontSize = 16.sp
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                // Values box
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFF2F2F2),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+
+                        val values = state.latestReadings[sensorType]?.values ?: emptyList()
+
+                        Text("Value 1: ${values.getOrNull(0) ?: "0.00"}")
+                        Text("Value 2: ${values.getOrNull(1) ?: "0.00"}")
+                        Text("Value 3: ${values.getOrNull(2) ?: "0.00"}")
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // Graph placeholder
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFE0E0E0),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Live graph placeholder",
+                            color = Color.Gray,
+                            fontSize = 13.sp
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                // Green Save Reading button
+                Button(
+                    onClick = onSaveReading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF27AE60) // Figma green
+                    )
+                ) {
+                    Text("Save Reading")
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                // Back to Main Menu link
+                Text(
+                    text = "< Back to Main Menu",
+                    color = Color(0xFF0094FF),
+                    fontSize = 14.sp,
+                    modifier = Modifier.clickable { onBack() }
+                )
             }
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        // GRAPH PLACEHOLDER
-        Surface(
-            shape = MaterialTheme.shapes.medium,
-            tonalElevation = 1.dp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(180.dp)
-        ) {
-            LiveSensorGraph(
-                values = reading?.values ?: emptyList(),
-                modifier = Modifier.fillMaxSize()
-            )
-                Text("Live graph placeholder")
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        Button(
-            onClick = onSaveReading,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-        ) {
-            Text("Save Reading")
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-        TextButton(onClick = onBack) {
-            Text("← Back to Main Menu")
         }
     }
+}
 
 @Composable
 fun LiveSensorGraph(
